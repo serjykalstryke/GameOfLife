@@ -1,0 +1,64 @@
+﻿  Installing vcpkg dependencies to .\vcpkg_installed\x64-windows\include\
+  "C:\Program Files\Microsoft Visual Studio\2022\Preview\VC\vcpkg\vcpkg.exe" install  --x-wait-for-lock --triplet "x64-windows" --vcpkg-root "C:\Program Files\Microsoft Visual Studio\2022\Preview\VC\vcpkg\\" "--x-manifest-root=C:\Users\serjy\Documents\GameOfLife\\" "--x-install-root=.\vcpkg_installed\x64-windows\include\\" 
+  waiting to take filesystem lock on C:\Program Files\Microsoft Visual Studio\2022\Preview\VC\vcpkg\.vcpkg-root...
+  Fetching registry information from https://github.com/microsoft/vcpkg (HEAD)...
+  Detecting compiler hash for triplet x64-windows...
+  The following packages will be built and installed:
+    * bzip2[core,tool]:x64-windows -> 1.0.8#5 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\92e9a8bbf1abbd89872b48ad82fcf75852de1006
+    * egl-registry:x64-windows -> 2022-09-20 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\e596b6c29ad16da764aab6f2fef830a3a884f14b
+    * expat:x64-windows -> 2.5.0#3 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\9a1bc114edd74892d292c799e7b45b407f2a0b8b
+    * libjpeg-turbo:x64-windows -> 2.1.5.1#2 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\a54bb2bec4dfc177249e2c10b31a665c249c660c
+    * liblzma:x64-windows -> 5.4.3#1 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\3f97f6a0904a3add9c3273f8ab1993902d75d5ef
+    * libpng:x64-windows -> 1.6.39#1 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\af144fe56e6e4c08cd8089d2e1dd46bae60a5062
+    * nanosvg:x64-windows -> 2022-12-04 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\f7dcf8d5f33ca5e4b44960f697c7b1196a658b89
+    * opengl:x64-windows -> 2022-12-04#3 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\c3ae71738f88449ebcd781cef60d9a253fa091d4
+    * opengl-registry:x64-windows -> 2022-09-29#1 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\367e1502c966f1df0656bdea115989650d01a781
+    * pcre2[core,jit,platform-default-features]:x64-windows -> 10.42 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\148d5898b3c1925fd8e82663589917255172d5c9
+    * tiff[core,jpeg,lzma,zip]:x64-windows -> 4.5.1#2 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\68f4ecc87b5ddce6c328c0f600a4c8b81d967d4c
+    * vcpkg-cmake:x64-windows -> 2023-05-04 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\88a7058fc7fa73a9c4c99cfcae9d79e2abf87a5a
+    * vcpkg-cmake-config:x64-windows -> 2022-02-06#1 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\8d54cc4f487d51b655abec5f9c9c3f86ca83311f
+      wxwidgets[core,debug-support,sound]:x64-windows -> 3.2.2.1#3 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\2cbbd8d7a9d521546e8bc9b8957560806c4902e1
+    * zlib:x64-windows -> 1.2.13 -- C:\Users\serjy\AppData\Local\vcpkg\registries\git-trees\ad5a49006f73b45b715299515f31164131b51982
+  Additional packages (*) will be modified to complete this operation.
+  Restored 15 package(s) from C:\Users\serjy\AppData\Local\vcpkg\archives in 4.2 s. Use --debug to see more details.
+  Installing 1/15 vcpkg-cmake:x64-windows...
+  Elapsed time to handle vcpkg-cmake:x64-windows: 5.86 ms
+  Installing 2/15 zlib:x64-windows...
+  Elapsed time to handle zlib:x64-windows: 21.6 ms
+  Installing 3/15 vcpkg-cmake-config:x64-windows...
+  Elapsed time to handle vcpkg-cmake-config:x64-windows: 13.5 ms
+  Installing 4/15 liblzma:x64-windows...
+  Elapsed time to handle liblzma:x64-windows: 12 ms
+  Installing 5/15 libjpeg-turbo:x64-windows...
+  Elapsed time to handle libjpeg-turbo:x64-windows: 14.8 ms
+  Installing 6/15 tiff:x64-windows...
+  Elapsed time to handle tiff:x64-windows: 23.7 ms
+  Installing 7/15 bzip2:x64-windows...
+  Elapsed time to handle bzip2:x64-windows: 23.1 ms
+  Installing 8/15 pcre2:x64-windows...
+  Elapsed time to handle pcre2:x64-windows: 27.5 ms
+  Installing 9/15 egl-registry:x64-windows...
+  Elapsed time to handle egl-registry:x64-windows: 20.1 ms
+  Installing 10/15 opengl-registry:x64-windows...
+  Elapsed time to handle opengl-registry:x64-windows: 24.1 ms
+  Installing 11/15 opengl:x64-windows...
+  Elapsed time to handle opengl:x64-windows: 18.3 ms
+  Installing 12/15 nanosvg:x64-windows...
+  Elapsed time to handle nanosvg:x64-windows: 17.9 ms
+  Installing 13/15 libpng:x64-windows...
+  Elapsed time to handle libpng:x64-windows: 25.9 ms
+  Installing 14/15 expat:x64-windows...
+  Elapsed time to handle expat:x64-windows: 27.8 ms
+  Installing 15/15 wxwidgets:x64-windows...
+  Elapsed time to handle wxwidgets:x64-windows: 240 ms
+  Total install time: 516 ms
+  The package wxwidgets provides CMake targets:
+  
+      find_package(wxWidgets CONFIG REQUIRED)
+      target_link_libraries(main PRIVATE wx::core wx::base)
+  
+  Cell.cpp
+  Main.cpp
+  Universe.cpp
+  Generating Code...
+  GameOfLife.vcxproj -> C:\Users\serjy\Documents\GameOfLife\x64\Debug\GameOfLife.exe
