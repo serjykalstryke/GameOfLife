@@ -33,6 +33,9 @@ public:
     void OnClearAll(wxCommandEvent& event);
     void OnResize(wxSizeEvent& event);
     void OnChangeColor(wxCommandEvent& event);
+    void UpdateStatusBar();
+    void OnNext(wxCommandEvent& event);
+    void OnPause(wxCommandEvent& event);
     ~GameOfLifeFrame();
 
    
@@ -46,6 +49,9 @@ private:
     wxButton* insertSpaceshipButton;
     wxButton* insertPulsarButton;
     wxButton* clearButton;
+    wxButton* nextButton;
+    wxButton* pauseButton; 
+    bool paused = false; 
     wxTimer* timer;
 
     void OnTimer(wxTimerEvent& event);
@@ -66,6 +72,9 @@ GameOfLifeFrame::GameOfLifeFrame(const wxString& title, const wxPoint& pos, cons
     canvas->Bind(wxEVT_LEFT_DOWN, &GameOfLifeFrame::OnDrawCell, this);
     canvas->Bind(wxEVT_SIZE, &GameOfLifeFrame::OnResize, this);
 
+    CreateStatusBar(2); // Creates a status bar with 2 fields
+
+
     
 
 
@@ -85,8 +94,17 @@ GameOfLifeFrame::GameOfLifeFrame(const wxString& title, const wxPoint& pos, cons
     wxButton* changeColorButton = new wxButton(this, wxID_ANY, "Change Cell Color");
     changeColorButton->Bind(wxEVT_BUTTON, &GameOfLifeFrame::OnChangeColor, this);
 
+    nextButton = new wxButton(this, wxID_ANY, "Next");
+    nextButton->Bind(wxEVT_BUTTON, &GameOfLifeFrame::OnNext, this);
+    nextButton->Disable(); // Disable the button initially
+    pauseButton = new wxButton(this, wxID_ANY, "Pause");
+    pauseButton->Bind(wxEVT_BUTTON, &GameOfLifeFrame::OnPause, this);
+
+
     wxBoxSizer* buttonSizer = new wxBoxSizer(wxHORIZONTAL);
     buttonSizer->Add(startButton, 0, wxALL, 10);
+    buttonSizer->Add(pauseButton, 0, wxALL, 10);
+    buttonSizer->Add(nextButton, 0, wxALL, 10);
     buttonSizer->Add(randomizeButton, 0, wxALL, 10);
     buttonSizer->Add(clearButton, 0, wxALL, 10);
     buttonSizer->Add(insertGliderButton, 0, wxALL, 10);
@@ -139,18 +157,35 @@ void GameOfLifeFrame::DrawPattern(const std::vector<std::vector<int>>& pattern) 
 }
 
 void GameOfLifeFrame::OnStart(wxCommandEvent& event) {
-    if (simulationRunning) {
-        // Stop the simulation.
+    if (paused) {
+        // Resume the simulation
+        paused = false;
+        startButton->SetLabel("Stop");
+        timer->Start(100);
+        pauseButton->Enable(); // Enable the "Pause" button when starting or resuming the simulation
+        nextButton->Disable(); // Disable the "Next" button when starting or resuming the simulation
+        UpdateStatusBar();
+    }
+    else if (simulationRunning) {
+        // Stop the simulation
         simulationRunning = false;
         timer->Stop();
         startButton->SetLabel("Start");
-    } else {
-        // Start the simulation.
+        pauseButton->Disable(); // Disable the "Pause" button when stopping the simulation
+        nextButton->Disable(); // Disable the "Next" button when stopping the simulation
+        UpdateStatusBar();
+    }
+    else {
+        // Start the simulation
         simulationRunning = true;
         timer->Start(100);
         startButton->SetLabel("Stop");
+        pauseButton->Enable(); // Enable the "Pause" button when starting the simulation
+        nextButton->Disable(); // Disable the "Next" button when starting the simulation
+        UpdateStatusBar();
     }
 }
+
 void GameOfLifeFrame::OnDrawCell(wxMouseEvent& event) {
     int cellWidth = canvas->GetSize().GetWidth() / GRID_WIDTH;
     int cellHeight = canvas->GetSize().GetHeight() / GRID_HEIGHT;
@@ -164,7 +199,7 @@ void GameOfLifeFrame::OnDrawCell(wxMouseEvent& event) {
     int topLeftX = x * cellWidth;
     int topLeftY = y * cellHeight;
     canvas->RefreshRect(wxRect(topLeftX, topLeftY, cellWidth, cellHeight));
-
+    UpdateStatusBar();
   
 }
 
@@ -229,6 +264,7 @@ void GameOfLifeFrame::OnTimer(wxTimerEvent& event) {
                     // Existing cell: Just update alive status without changing color
                     if (neighbors < 2 || neighbors > 3) {
                         nextGeneration.setCellAlive(j, i, false);
+                        UpdateStatusBar();
                     }
                     // For alive cells that survive, we don't need to change the color or set them alive again.
                 }
@@ -240,6 +276,7 @@ void GameOfLifeFrame::OnTimer(wxTimerEvent& event) {
                     // For dead cells that remain dead, no action is required.
                 }
                
+
             }
         }
 
@@ -262,6 +299,7 @@ void GameOfLifeFrame::OnInsertGlider(wxCommandEvent& event) {
         {1, 1, 1}
     };
     DrawPattern(gliderPattern);
+    UpdateStatusBar();
 }
 
 void GameOfLifeFrame::OnInsertSpaceship(wxCommandEvent& event) {
@@ -272,6 +310,7 @@ void GameOfLifeFrame::OnInsertSpaceship(wxCommandEvent& event) {
         {1, 0, 0, 1, 0}
     };
     DrawPattern(spaceshipPattern);  // Using the generalized function
+    UpdateStatusBar();
 }
 
 void GameOfLifeFrame::OnInsertPulsar(wxCommandEvent& event) {
@@ -291,6 +330,7 @@ void GameOfLifeFrame::OnInsertPulsar(wxCommandEvent& event) {
         {0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
     };
     DrawPattern(pulsarPattern);  // Using the generalized function
+    UpdateStatusBar();
 }
 
 
@@ -299,6 +339,7 @@ void GameOfLifeFrame::OnInsertPulsar(wxCommandEvent& event) {
 void GameOfLifeFrame::OnRandomize(wxCommandEvent& event) {
     universe.initializeRandomUniverse();
     canvas->Refresh();
+    UpdateStatusBar();
 }
 
 void GameOfLifeFrame::OnClearAll(wxCommandEvent& event) {
@@ -311,6 +352,7 @@ void GameOfLifeFrame::OnClearAll(wxCommandEvent& event) {
         }
     }
     canvas->Refresh();
+    UpdateStatusBar();
 }
 
 void GameOfLifeFrame::OnResize(wxSizeEvent& event) {
@@ -318,6 +360,7 @@ void GameOfLifeFrame::OnResize(wxSizeEvent& event) {
     // TODO: Implement this logic if needed.
     canvas->Refresh();
     event.Skip(); // It's important to skip the event for default handling
+    UpdateStatusBar();
 }
 
 
@@ -338,6 +381,79 @@ void GameOfLifeFrame::OnChangeColor(wxCommandEvent& event) {
     }
 }
 
+void GameOfLifeFrame::UpdateStatusBar() {
+    int aliveCount = 0;
+    int deadCount = 0;
+
+    for (int i = 0; i < GRID_HEIGHT; i++) {
+        for (int j = 0; j < GRID_WIDTH; j++) {
+            if (universe.getCellState(j, i)) {
+                aliveCount++;
+            }
+            else {
+                deadCount++;
+            }
+        }
+    }
+
+    wxString aliveStr = wxString::Format("Alive cells: %d", aliveCount);
+    wxString deadStr = wxString::Format("Dead cells: %d", deadCount);
+
+    SetStatusText(aliveStr, 0);
+    SetStatusText(deadStr, 1);
+}
+
+void GameOfLifeFrame::OnPause(wxCommandEvent& event) {
+    if (paused) {
+        // Resume the simulation
+        paused = false;
+        startButton->SetLabel("Stop");
+        timer->Start(100);
+        nextButton->Disable(); // Disable the "Next" button when resuming the simulation
+        UpdateStatusBar();
+    }
+    else {
+        // Pause the simulation
+        paused = true;
+        startButton->SetLabel("Start");
+        timer->Stop();
+        nextButton->Enable(); // Enable the "Next" button when pausing the simulation
+        UpdateStatusBar();
+    }
+}
+
+
+void GameOfLifeFrame::OnNext(wxCommandEvent& event) {
+    // Create a copy of the current grid to store the next generation temporarily
+    Universe nextGeneration = universe;
+
+    // Calculate the next generation of the grid
+    for (int i = 0; i < GRID_HEIGHT; i++) {
+        for (int j = 0; j < GRID_WIDTH; j++) {
+            int neighbors = universe.countNeighbors(j, i);
+
+            if (universe.getCellState(j, i)) {
+                // Existing cell: Just update alive status without changing color
+                if (neighbors < 2 || neighbors > 3) {
+                    nextGeneration.setCellAlive(j, i, false);
+                }
+            }
+            else {
+                // Dead cell: If it becomes alive, set its color to the current picked color
+                if (neighbors == 3) {
+                    nextGeneration.setCellAlive(j, i, true, universe.determineBirthColor(j, i));
+                }
+            }
+        }
+    }
+
+    // Update the universe with the calculated next generation
+    universe = nextGeneration;
+
+    // Refresh the canvas to display the next generation
+    canvas->Refresh();
+    UpdateStatusBar();
+}
 
 
 

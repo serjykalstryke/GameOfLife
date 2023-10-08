@@ -63,14 +63,11 @@ int Universe::countNeighbors(int x, int y) const {
         for (int j = -1; j <= 1; ++j) {
             if (i == 0 && j == 0) continue;  // Skip the cell itself
 
-            int newX = x + i;
-            int newY = y + j;
+            int newX = (x + i + width) % width;  // Wrap around horizontally
+            int newY = (y + j + height) % height;  // Wrap around vertically
 
-            // Check boundaries
-            if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
-                if (grid[newX][newY].isAlive()) {
-                    count++;
-                }
+            if (grid[newX][newY].isAlive()) {
+                count++;
             }
         }
     }
