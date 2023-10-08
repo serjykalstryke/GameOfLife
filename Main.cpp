@@ -6,146 +6,169 @@
 
 #include "Universe.h"
 #include <wx/app.h>
+#include <wx/event.h>
+#include <random>
+#include <wx/colordlg.h>
+#include <wx/dcbuffer.h>
 
-#include <wx/dcbuffer.h> // Ensure this is included at the top of your file.
+#include <map>
+
+
+
 
 class GameOfLifeFrame : public wxFrame {
 public:
     GameOfLifeFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
 
+
+    static const int GRID_WIDTH;
+    static const int GRID_HEIGHT;
     void OnStart(wxCommandEvent& event);
     void OnDrawCell(wxMouseEvent& event);
-
     void OnPaint(wxPaintEvent& event);
-
     void OnInsertGlider(wxCommandEvent& event);
-
+    void OnInsertSpaceship(wxCommandEvent& event);
+    void OnInsertPulsar(wxCommandEvent& event);
+    void OnRandomize(wxCommandEvent& event);
+    void OnClearAll(wxCommandEvent& event);
+    void OnResize(wxSizeEvent& event);
+    void OnChangeColor(wxCommandEvent& event);
     ~GameOfLifeFrame();
 
-
+   
 
 private:
-
-    struct Cell {
-        bool alive;
-        wxColour color;
-
-        Cell() : alive(false), color(wxColour(0, 0, 0)) {} // Default is black and dead
-    };
-
-    static const int GRID_WIDTH = 100;
-    static const int GRID_HEIGHT = 100;
-
     Universe universe;
-
     wxPanel* canvas;
-
     wxButton* startButton;
+    wxButton* randomizeButton;
     wxButton* insertGliderButton;
-
-
+    wxButton* insertSpaceshipButton;
+    wxButton* insertPulsarButton;
+    wxButton* clearButton;
     wxTimer* timer;
 
     void OnTimer(wxTimerEvent& event);
-
     wxBitmap bufferBitmap;
+    bool simulationRunning = false;
+    wxColour currentCellColor = *wxBLACK;  // Default color for alive cells
+    wxColour backgroundColor = *wxWHITE;   // Default background color
 
-    Cell grid[GRID_WIDTH][GRID_HEIGHT];
-    wxColour currentColor = *wxBLACK;  // default color
+    void DrawPattern(const std::vector<std::vector<int>>& pattern);
 };
+const int GameOfLifeFrame::GRID_WIDTH = Universe::getGridWidth();
+const int GameOfLifeFrame::GRID_HEIGHT = Universe::getGridHeight();
 
 GameOfLifeFrame::GameOfLifeFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
-    : wxFrame(NULL, wxID_ANY, title, pos, size), grid{} {
-
-    // Fill our local grid based on the Universe class.
-    for (int i = 0; i < GRID_HEIGHT; i++) {
-        for (int j = 0; j < GRID_WIDTH; j++) {
-            Cell grid[GRID_WIDTH][GRID_HEIGHT];
-
-        }
-    }
-
-    // Create a canvas for drawing
+    : wxFrame(NULL, wxID_ANY, title, pos, size), universe(GRID_WIDTH, GRID_HEIGHT) {
     canvas = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize);
     canvas->SetBackgroundStyle(wxBG_STYLE_PAINT);
-    
     canvas->Bind(wxEVT_LEFT_DOWN, &GameOfLifeFrame::OnDrawCell, this);
+    canvas->Bind(wxEVT_SIZE, &GameOfLifeFrame::OnResize, this);
 
-    // Create a Start button
+    
+
+
+    // Create buttons
     startButton = new wxButton(this, wxID_ANY, "Start");
     startButton->Bind(wxEVT_BUTTON, &GameOfLifeFrame::OnStart, this);
+    randomizeButton = new wxButton(this, wxID_ANY, "Randomize");
+    randomizeButton->Bind(wxEVT_BUTTON, &GameOfLifeFrame::OnRandomize, this);
+    insertGliderButton = new wxButton(this, wxID_ANY, "Insert Glider");
+    insertGliderButton->Bind(wxEVT_BUTTON, &GameOfLifeFrame::OnInsertGlider, this);
+    clearButton = new wxButton(this, wxID_ANY, "Clear All");
+    clearButton->Bind(wxEVT_BUTTON, &GameOfLifeFrame::OnClearAll, this);
+    insertSpaceshipButton = new wxButton(this, wxID_ANY, "Insert Spaceship");
+    insertSpaceshipButton->Bind(wxEVT_BUTTON, &GameOfLifeFrame::OnInsertSpaceship, this);
+    insertPulsarButton = new wxButton(this, wxID_ANY, "Insert Pulsar");
+    insertPulsarButton->Bind(wxEVT_BUTTON, &GameOfLifeFrame::OnInsertPulsar, this);
+    wxButton* changeColorButton = new wxButton(this, wxID_ANY, "Change Cell Color");
+    changeColorButton->Bind(wxEVT_BUTTON, &GameOfLifeFrame::OnChangeColor, this);
 
-    // Layout the controls
-    wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
-    sizer->Add(canvas, 1, wxEXPAND);
-    sizer->Add(startButton, 0, wxALIGN_CENTER | wxTOP | wxBOTTOM, 10);
-    SetSizer(sizer);
+    wxBoxSizer* buttonSizer = new wxBoxSizer(wxHORIZONTAL);
+    buttonSizer->Add(startButton, 0, wxALL, 10);
+    buttonSizer->Add(randomizeButton, 0, wxALL, 10);
+    buttonSizer->Add(clearButton, 0, wxALL, 10);
+    buttonSizer->Add(insertGliderButton, 0, wxALL, 10);
+    buttonSizer->Add(insertSpaceshipButton, 0, wxALL, 10);
+    buttonSizer->Add(insertPulsarButton, 0, wxALL, 10);
+    buttonSizer->Add(changeColorButton, 0, wxALL, 10);
 
+    wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
+    mainSizer->Add(canvas, 1, wxEXPAND);
+    mainSizer->Add(buttonSizer, 0, wxALIGN_CENTER | wxTOP | wxBOTTOM, 10);
 
-
-    // Manually set the size of the frame
+    SetSizer(mainSizer);
     SetSize(size);
-
-    // Bind the paint event to the OnPaint function
     canvas->Bind(wxEVT_PAINT, &GameOfLifeFrame::OnPaint, this);
 
-    // Bind timer event
-
     timer = new wxTimer(this);
-
     Bind(wxEVT_TIMER, &GameOfLifeFrame::OnTimer, this, timer->GetId());
-
-    // Add glider to grid
-    insertGliderButton = new wxButton(this, wxID_ANY, "Insert Glider");
-    sizer->Add(insertGliderButton, 0, wxALIGN_CENTER | wxTOP | wxBOTTOM, 10);
-
-    // Bind glider button to glider event
-    insertGliderButton->Bind(wxEVT_BUTTON, &GameOfLifeFrame::OnInsertGlider, this);
-
-
-
-
 }
 
 GameOfLifeFrame::~GameOfLifeFrame() {
-    if (timer) {
+    if (timer && timer->IsRunning()) {
         timer->Stop();
-        delete timer;
     }
+    delete timer;
+}
+
+void GameOfLifeFrame::DrawPattern(const std::vector<std::vector<int>>& pattern) {
+    int patternWidth = pattern[0].size();
+    int patternHeight = pattern.size();
+
+    // Generate a random starting position for the pattern.
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<int> distX(0, this->GRID_WIDTH - patternWidth);
+    std::uniform_int_distribution<int> distY(0, this->GRID_HEIGHT - patternHeight);
+
+    int startX = distX(mt);
+    int startY = distY(mt);
+
+    // Update the universe with the pattern.
+    for (int i = 0; i < patternHeight; i++) {
+        for (int j = 0; j < patternWidth; j++) {
+            bool alive = pattern[i][j] == 1;
+            int actualX = startX + j; // startX is the starting x position for your pattern on the universe
+            int actualY = startY + i; // startY is the starting y position for your pattern on the universe
+            universe.setCellAlive(actualX, actualY, alive, currentCellColor);
+        }
+    }
+    canvas->Refresh();
 }
 
 void GameOfLifeFrame::OnStart(wxCommandEvent& event) {
-    if (timer->IsRunning()) {
+    if (simulationRunning) {
+        // Stop the simulation.
+        simulationRunning = false;
         timer->Stop();
         startButton->SetLabel("Start");
-    }
-    else {
-        timer->Start(100); // Start the timer with an interval of 100ms
+    } else {
+        // Start the simulation.
+        simulationRunning = true;
+        timer->Start(100);
         startButton->SetLabel("Stop");
     }
 }
-
-
-
 void GameOfLifeFrame::OnDrawCell(wxMouseEvent& event) {
     int cellWidth = canvas->GetSize().GetWidth() / GRID_WIDTH;
     int cellHeight = canvas->GetSize().GetHeight() / GRID_HEIGHT;
 
-    int x = event.GetX() / cellWidth;  // Compute the column based on mouse x-coordinate
-    int y = event.GetY() / cellHeight; // Compute the row based on mouse y-coordinate
+    int x = event.GetX() / cellWidth;
+    int y = event.GetY() / cellHeight;
 
-    // Toggle the cell's state in the local grid
-    grid[x][y].alive = !grid[x][y].alive;
-
-
-    // Synchronize the change with the Universe class's grid
-    universe.setCellAlive(x, y, grid[x][y].alive);
+    bool currentState = universe.getCellState(x, y);
+    universe.setCellAlive(x, y, !currentState, currentCellColor);  // Pass the current color when setting a cell alive
 
     int topLeftX = x * cellWidth;
     int topLeftY = y * cellHeight;
-
     canvas->RefreshRect(wxRect(topLeftX, topLeftY, cellWidth, cellHeight));
+
+  
 }
+
+
 
 
 void GameOfLifeFrame::OnPaint(wxPaintEvent& event) {
@@ -165,19 +188,17 @@ void GameOfLifeFrame::OnPaint(wxPaintEvent& event) {
     int cellHeight = canvas->GetSize().GetHeight() / GRID_HEIGHT;
 
     // Draw cells on memDC
-    // Draw cells on memDC
     for (int i = 0; i < GRID_HEIGHT; i++) {
         for (int j = 0; j < GRID_WIDTH; j++) {
-            if (grid[j][i].alive) {
-                memDC.SetBrush(*wxBLACK_BRUSH);  // black for alive cells
+            if (universe.getCellState(j, i)) {
+                memDC.SetBrush(wxBrush(universe.getCellColor(j, i)));
             }
             else {
-                memDC.SetBrush(*wxWHITE_BRUSH);  // white for dead cells
+                memDC.SetBrush(*wxWHITE_BRUSH);
             }
             memDC.DrawRectangle(j * cellWidth, i * cellHeight, cellWidth, cellHeight);
         }
     }
-
 
     // Draw gridlines on memDC
     memDC.SetPen(*wxLIGHT_GREY_PEN);
@@ -192,66 +213,134 @@ void GameOfLifeFrame::OnPaint(wxPaintEvent& event) {
     dc.Blit(0, 0, canvas->GetSize().GetWidth(), canvas->GetSize().GetHeight(), &memDC, 0, 0, wxCOPY, false);
 }
 
+bool simulationRunning = false;
 
 void GameOfLifeFrame::OnTimer(wxTimerEvent& event) {
-    
-    // Sync GUI grid state to Universe's grid before play
-    for (int i = 0; i < GRID_HEIGHT; i++) {
-        for (int j = 0; j < GRID_WIDTH; j++) {
-            universe.setCellAlive(j, i, grid[j][i].alive);
+    if (simulationRunning) {
+        // Create a copy of the current grid to store the next generation temporarily
+        Universe nextGeneration = universe;
+
+        // Calculate the next generation of the grid
+        for (int i = 0; i < GRID_HEIGHT; i++) {
+            for (int j = 0; j < GRID_WIDTH; j++) {
+                int neighbors = universe.countNeighbors(j, i);
+
+                if (universe.getCellState(j, i)) {
+                    // Existing cell: Just update alive status without changing color
+                    if (neighbors < 2 || neighbors > 3) {
+                        nextGeneration.setCellAlive(j, i, false);
+                    }
+                    // For alive cells that survive, we don't need to change the color or set them alive again.
+                }
+                else {
+                    // Dead cell: If it becomes alive, set its color to the current picked color
+                    if (neighbors == 3) {
+                        nextGeneration.setCellAlive(j, i, true, universe.determineBirthColor(j, i));
+                    }
+                    // For dead cells that remain dead, no action is required.
+                }
+               
+            }
         }
+
+        // Update the universe with the calculated next generation
+        universe = nextGeneration;
+
+        // Refresh the canvas to display the next generation
+        canvas->Refresh();
     }
-
-
-    // Advance the game by one generation
-    universe.play();
-
-    // Update our local grid based on the Universe class after evolution
-    for (int i = 0; i < GRID_HEIGHT; i++) {
-        for (int j = 0; j < GRID_WIDTH; j++) {
-            grid[j][i].alive = universe.getCellState(j, i);
-        }
-    }
-
-    canvas->Refresh(); // Refresh the canvas to reflect the new state
 }
+
+
+
 
 
 void GameOfLifeFrame::OnInsertGlider(wxCommandEvent& event) {
-    // For simplicity, let's place the glider at a fixed position, say (10,10).
-    int startX = 10;
-    int startY = 10;
-
-    
-
-    // Synchronize the change with the Universe class's grid
-    universe.setCellAlive(startX + 1, startY, true);
-    universe.setCellAlive(startX + 2, startY + 1, true);
-    universe.setCellAlive(startX, startY + 2, true);
-    universe.setCellAlive(startX + 1, startY + 2, true);
-    universe.setCellAlive(startX + 2, startY + 2, true);
-
-    canvas->Refresh();
-
-    // Define the glider pattern.
-    int gliderPattern[3][3] = {
+    std::vector<std::vector<int>> gliderPattern = {
         {0, 1, 0},
-        {1, 0, 1},
-        {0, 1, 1}
+        {0, 0, 1},
+        {1, 1, 1}
     };
+    DrawPattern(gliderPattern);
+}
 
-    // Update the grid and the universe.
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            grid[startX + j][startY + i].alive = gliderPattern[i][j];
-            universe.setCellAlive(startX + j, startY + i, gliderPattern[i][j]);
-        }
-    }
+void GameOfLifeFrame::OnInsertSpaceship(wxCommandEvent& event) {
+    std::vector<std::vector<int>> spaceshipPattern = {
+        {0, 1, 1, 1, 1},
+        {1, 0, 0, 0, 1},
+        {0, 0, 0, 0, 1},
+        {1, 0, 0, 1, 0}
+    };
+    DrawPattern(spaceshipPattern);  // Using the generalized function
+}
+
+void GameOfLifeFrame::OnInsertPulsar(wxCommandEvent& event) {
+    std::vector<std::vector<int>>  pulsarPattern = {
+         {0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0},
+        {0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0},
+        {0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0},
+        {0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
+        {0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0},
+        {0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0},
+        {0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0},
+    };
+    DrawPattern(pulsarPattern);  // Using the generalized function
+}
 
 
-    // Refresh the canvas to show the new pattern.
+
+
+void GameOfLifeFrame::OnRandomize(wxCommandEvent& event) {
+    universe.initializeRandomUniverse();
     canvas->Refresh();
 }
+
+void GameOfLifeFrame::OnClearAll(wxCommandEvent& event) {
+    // TODO: Implement the clearAll method in Universe class.
+    universe.clearAll();
+
+    for (int i = 0; i < GRID_HEIGHT; i++) {
+        for (int j = 0; j < GRID_WIDTH; j++) {
+            universe.setCellColor(GridCoord(j, i), backgroundColor);
+        }
+    }
+    canvas->Refresh();
+}
+
+void GameOfLifeFrame::OnResize(wxSizeEvent& event) {
+    // Recalculate the cell size to fit the window.
+    // TODO: Implement this logic if needed.
+    canvas->Refresh();
+    event.Skip(); // It's important to skip the event for default handling
+}
+
+
+
+
+
+
+
+void GameOfLifeFrame::OnChangeColor(wxCommandEvent& event) {
+    wxColourData data;
+    data.SetChooseFull(true);
+    data.SetColour(currentCellColor); // setting the current color for the dialog
+
+    wxColourDialog dialog(this, &data);
+    if (dialog.ShowModal() == wxID_OK) {
+        currentCellColor = dialog.GetColourData().GetColour();
+        // No canvas refresh here. The new color will be used when new cells are born.
+    }
+}
+
+
+
+
 
 
 

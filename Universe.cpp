@@ -1,102 +1,132 @@
-#define _CRT_SECURE_NO_WARNINGS
-
 #include "Universe.h"
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
 #include <utility>  // For std::swap
+#include <wx/wx.h>
 
-Universe::Universe() {
-    this->width = Universe::WIDTH;
-    this->height = Universe::HEIGHT;
-    grid.resize(Universe::HEIGHT, std::vector<Cell>(Universe::WIDTH));
-    scratchPad.resize(Universe::HEIGHT, std::vector<Cell>(Universe::WIDTH));
+const int Universe::GRID_WIDTH = 100;
+const int Universe::GRID_HEIGHT = 100;
+
+Universe::Universe(int width, int height)
+    : width(width), height(height) {
+    
+
+    grid.assign(width, std::vector<Cell>(height));
+    scratchPad.assign(width, std::vector<Cell>(height));
 }
 
+// Utility function to check boundaries
+inline bool Universe::isWithinBounds(int x, int y) const {
+    return x >= 0 && x < width && y >= 0 && y < height;
+}
 
-void Universe::initializeRandomUniverse() {
-    // Initialize the universe with random cells
-    std::srand(static_cast<unsigned>(std::time(nullptr))); // Seed the random number generator
-    for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < width; ++j) {
-            grid[i][j].setAlive(std::rand() % 3 == 0);
-        }
+bool Universe::getCellState(int x, int y) const {
+    if (isWithinBounds(x, y)) {
+        return grid[x][y].isAlive();
+    }
+    return false;  // or throw an exception
+}
+
+wxColour Universe::getCellColor(int x, int y) const {
+    if (isWithinBounds(x, y)) {
+        return grid[x][y].getCellColor();
+    }
+    return *wxBLACK;  // default or throw an exception
+}
+
+void Universe::setCellColor(const GridCoord& coord, const wxColour& color) {
+    if (isWithinBounds(coord.x, coord.y)) {
+        grid[coord.x][coord.y].setCellColor(color);
+    }
+    // else throw an exception or handle the error
+}
+
+void Universe::setCellAlive(int x, int y, bool alive) {
+    if (isWithinBounds(x, y)) {
+        grid[x][y].setAlive(alive);
     }
 }
 
-void Universe::play() {
-    // Calculate the next generation
-    for (int i = 0; i < Universe::HEIGHT; ++i) {
-        for (int j = 0; j < Universe::WIDTH; ++j) {
-            int neighbors = countNeighbors(i, j);
-            if (grid[i][j].isAlive()) {
-                // Apply rules for living cells
-                if (neighbors < 2 || neighbors > 3) {
-                    scratchPad[i][j].setAlive(false);
-                }
-                else {
-                    scratchPad[i][j].setAlive(true);
-                    scratchPad[i][j].incrementGenerationsAlive();
-                }
-            }
-            else {
-                // Apply rules for dead cells
-                if (neighbors == 3) {
-                    scratchPad[i][j].setAlive(true);
-                }
-                else {
-                    scratchPad[i][j].setAlive(false);
-                }
-            }
-        }
+void Universe::setCellAlive(int x, int y, bool alive, wxColour color) {
+    if (isWithinBounds(x, y)) {
+        grid[x][y].setAlive(alive);
+        grid[x][y].setCellColor(color);
     }
-
-    // Swap grid and scratch pad
-    std::swap(grid, scratchPad);
 }
+
+
 
 int Universe::countNeighbors(int x, int y) const {
     int count = 0;
     for (int i = -1; i <= 1; ++i) {
         for (int j = -1; j <= 1; ++j) {
-            if (i == 0 && j == 0) continue;  // Skip the current cell
-            int nx = (x + i + Universe::HEIGHT) % Universe::HEIGHT;  // Wrap around for toroidal behavior
-            int ny = (y + j + Universe::WIDTH) % Universe::WIDTH;
-            if (grid[nx][ny].isAlive()) {
-                count++;
+            if (i == 0 && j == 0) continue;  // Skip the cell itself
+
+            int newX = x + i;
+            int newY = y + j;
+
+            // Check boundaries
+            if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                if (grid[newX][newY].isAlive()) {
+                    count++;
+                }
             }
         }
     }
     return count;
 }
 
-Cell& Universe::getCell(int x, int y) {
-    return grid[y][x];
-}
+wxColour Universe::determineBirthColor(int x, int y) {
+    std::map<wxColour, int, wxColourComparator> colorCount;
 
-void Universe::setCellAlive(int x, int y, bool isAlive) {
-    grid[y][x].setAlive(isAlive);
-}
+    for (int i = -1; i <= 1; ++i) {
+        for (int j = -1; j <= 1; ++j) {
+            if (i == 0 && j == 0) continue;  // Skip the cell itself
 
-void Universe::setCellColor(int x, int y, const wxColor& color) {
-    grid[y][x].setColor(color);
-}
+            int newX = x + i;
+            int newY = y + j;
 
-bool Universe::getCellState(int x, int y) const {
-    return grid[y][x].isAlive();
-}
+            // Check boundaries
+            if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                if (grid[newX][newY].isAlive()) {
+                    colorCount[grid[newX][newY].getCellColor()]++;
+                }
 
-void Universe::printUniverse() const {
-    for (int i = 0; i < Universe::HEIGHT; ++i) {
-        for (int j = 0; j < Universe::WIDTH; ++j) {
-            if (grid[i][j].isAlive()) {
-                std::cout << 'X'; // Print 'X' for living cells
-            }
-            else {
-                std::cout << ' '; // Print a space for dead cells
             }
         }
-        std::cout << std::endl; // Newline for the next row
+    }
+
+    // Find the most common color
+    wxColour mostCommonColor = *wxBLACK;
+    int maxCount = 0;
+    for (const auto& pair : colorCount) {
+        if (pair.second > maxCount) {
+            mostCommonColor = pair.first;
+            maxCount = pair.second;
+        };
+    }
+
+    return mostCommonColor;
+}
+
+
+void Universe::initializeRandomUniverse() {
+    srand(static_cast<unsigned>(time(0)));  // Seed the random number generator.
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            bool isAlive = rand() % 2 == 1;  // Randomly choose between alive (true) or dead (false).
+            wxColour randomColor(rand() % 256, rand() % 256, rand() % 256);  // Generate a random color.
+            setCellAlive(i, j, isAlive, randomColor);  // Set the cell's state and color.
+        }
+    }
+}
+
+void Universe::clearAll() {
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            setCellAlive(i, j, false, *wxBLACK);  // Set each cell to dead and assign a default black color.
+        }
     }
 }
 

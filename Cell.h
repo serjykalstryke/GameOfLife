@@ -1,26 +1,31 @@
 #pragma once
 #include <wx/colour.h>
-#ifndef CELL_H
-#define CELL_H
 
 class Cell {
 public:
-    Cell();
+    // Default constructor initializing the cell's state
+    Cell() : alive(false), generationsAlive(0), color(wxColour(0, 0, 0)) {} // Default to a dead cell with black color
 
-    bool isAlive() const;
-    void setAlive(bool value);
-    int getGenerationsAlive() const;
-    void incrementGenerationsAlive();
+    // Returns true if the cell is alive, false otherwise
+    inline bool isAlive() const { return alive; }
 
-    wxColor getColor() const;
+    // Sets the cell's alive state to the given value
+    inline void setAlive(bool value) { alive = value; }
 
-    void setColor(const wxColor& newColor);
+    // Gets the number of generations the cell has been alive
+    inline int getGenerationsAlive() const { return generationsAlive; }
 
+    // Increments the number of generations the cell has been alive
+    inline void incrementGenerationsAlive() { ++generationsAlive; }
+
+    // Gets the color of the cell
+    inline wxColour getCellColor() const { return color; }
+
+    // Sets the color of the cell to the given value
+    inline void setCellColor(const wxColour& value) { color = value; }
 
 private:
-    bool alive;
-    int generationsAlive;
-    wxColor color;
+    bool alive;            // Indicates whether the cell is alive
+    int generationsAlive; // Number of generations the cell has been alive
+    wxColour color;       // Color of the cell
 };
-
-#endif // CELL_H
