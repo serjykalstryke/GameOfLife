@@ -1,0 +1,2 @@
+GridColor=rgb(255, 0, 128)
+BackgroundColor=rgb(255, 128, 128)
